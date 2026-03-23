@@ -57,9 +57,9 @@ pip install pystray pillow plyer
 
 ### 2. Launch the app
 
-**Option A — Double-click** `SysMon.bat` on your Desktop
+**Option A - Double-click** `SysMon.bat` on your Desktop
 
-**Option B — Run manually in two terminals:**
+**Option B - Run manually in two terminals:**
 
 Terminal 1:
 ```bash
@@ -132,11 +132,11 @@ All thresholds are configurable in the Settings page. Alerts have a 10-minute co
 
 Beyond simple thresholds, the alert engine detects:
 
-- **Rising RAM trend** — RAM increasing monotonically across 8 samples (possible memory leak)
-- **CPU spike** — current CPU is 2 standard deviations above recent baseline
-- **Repeated spikes** — 5+ threshold crossings in recent history
-- **Offline detection** — no check-in for 60 seconds
-- **Recovery** — notifies when a device comes back online
+- **Rising RAM trend** - RAM increasing monotonically across 8 samples (possible memory leak)
+- **CPU spike** - current CPU is 2 standard deviations above recent baseline
+- **Repeated spikes** - 5+ threshold crossings in recent history
+- **Offline detection** - no check-in for 60 seconds
+- **Recovery** - notifies when a device comes back online
 
 ---
 
@@ -198,4 +198,4 @@ Each device gets a unique persistent ID and appears automatically on the dashboa
 
 ## License
 
-MIT — free to use, modify, and share.
+MIT - free to use, modify, and share.
