@@ -1,4 +1,4 @@
-# SysMon — AI-Powered System Monitor
+# SysMon - AI-Powered System Monitor
 
 A Python desktop app that monitors your computer in real time, detects anomalies, generates AI health summaries, and sends Telegram alerts to your phone.
 
@@ -8,14 +8,14 @@ A Python desktop app that monitors your computer in real time, detects anomalies
 
 ## What it does
 
-- **Live monitoring** — tracks CPU, RAM, disk usage, and uptime every 10 seconds
-- **Desktop app** — native Windows window with sidebar navigation, no browser needed
-- **Web dashboard** — full browser dashboard at `http://localhost:5000`
-- **Smart alerts** — detects threshold violations and anomalies (memory leaks, CPU spikes)
-- **Telegram notifications** — sends messages to your phone when something goes wrong
-- **Recovery alerts** — notifies you when the system returns to normal
-- **AI health summaries** — uses Claude API to explain what's wrong in plain English
-- **System tray icon** — runs in the background, changes color based on health status
+- **Live monitoring** - tracks CPU, RAM, disk usage, and uptime every 10 seconds
+- **Desktop app** - native Windows window with sidebar navigation, no browser needed
+- **Web dashboard** - full browser dashboard at `http://localhost:5000`
+- **Smart alerts** - detects threshold violations and anomalies (memory leaks, CPU spikes)
+- **Telegram notifications** - sends messages to your phone when something goes wrong
+- **Recovery alerts** - notifies you when the system returns to normal
+- **AI health summaries** - uses Claude API to explain what's wrong in plain English
+- **System tray icon** - runs in the background, changes color based on health status
 
 ---
 
