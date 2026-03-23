@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+{% block title %}Device{% endblock %}
+{% block nav_home %}active{% endblock %}
+
+{% block content %}
+<div class="page-header" style="display:flex;align-items:center;justify-content:space-between">
+  <div>
+    <h1 id="device-hostname">// loading...</h1>
+    <p id="device-subtitle">—</p>
+  </div>
+  <div id="device-badge"></div>
+</div>
+
+<div class="ai-panel" id="ai-panel" style="display:none">
+  <div class="ai-panel-header">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    AI health summary
+    <span id="ai-ts" style="margin-left:auto;color:var(--text3);font-size:10px"></span>
+  </div>
+  <div class="ai-summary-text" id="ai-summary">—</div>
+  <div class="ai-cause-text" id="ai-cause"></div>
+  <div class="ai-rec-text" id="ai-rec"></div>
+</div>
+
+<div class="chart-grid">
+  <div class="chart-card">
+    <div class="chart-label">CPU usage %</div>
+    <canvas id="cpu-chart" height="100"></canvas>
+  </div>
+  <div class="chart-card">
+    <div class="chart-label">RAM usage %</div>
+    <canvas id="ram-chart" height="100"></canvas>
+  </div>
+  <div class="chart-card">
+    <div class="chart-label">Disk usage %</div>
+    <canvas id="disk-chart" height="100"></canvas>
+  </div>
+</div>
+
+<div class="detail-grid">
+  <div class="info-card">
+    <h3>System info</h3>
+    <div class="info-row"><span class="info-key">Hostname</span><span class="info-val" id="info-hostname">—</span></div>
+    <div class="info-row"><span class="info-key">IP Address</span><span class="info-val" id="info-ip">—</span></div>
+    <div class="info-row"><span class="info-key">OS</span><span class="info-val" id="info-os">—</span></div>
+    <div class="info-row"><span class="info-key">First seen</span><span class="info-val" id="info-first">—</span></div>
+    <div class="info-row"><span class="info-key">Last check-in</span><span class="info-val" id="info-last">—</span></div>
+  </div>
+  <div class="info-card">
+    <h3>Current metrics</h3>
+    <div class="info-row"><span class="info-key">CPU</span><span class="info-val" id="live-cpu">—</span></div>
+    <div class="info-row"><span class="info-key">RAM</span><span class="info-val" id="live-ram">—</span></div>
+    <div class="info-row"><span class="info-key">Disk</span><span class="info-val" id="live-disk">—</span></div>
+    <div class="info-row"><span class="info-key">Uptime</span><span class="info-val" id="live-uptime">—</span></div>
+  </div>
+</div>
+
+<div class="section-title">Recent alerts</div>
+<div class="alert-table-wrap">
+  <table class="alert-table">
+    <thead>
+      <tr>
+        <th>Time</th><th>Type</th><th>Severity</th><th>Message</th><th>Phone</th>
+      </tr>
+    </thead>
+    <tbody id="alerts-body">
+      <tr><td colspan="5" class="empty-state">No alerts</td></tr>
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script>
+const DEVICE_ID = "{{ device_id }}";
+
+Chart.defaults.color = '#4a5568';
+Chart.defaults.borderColor = '#252a33';
+Chart.defaults.font.family = "'IBM Plex Mono', monospace";
+Chart.defaults.font.size = 10;
+
+function makeChart(id, color) {
+  return new Chart(document.getElementById(id).getContext('2d'), {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [{
+        data: [],
+        borderColor: color,
+        borderWidth: 1.5,
+        fill: true,
+        backgroundColor: color + '18',
+        tension: 0.3,
+        pointRadius: 0,
+        pointHoverRadius: 3
+      }]
+    },
+    options: {
+      responsive: true,
+      animation: false,
+      plugins: { legend: { display: false }, tooltip: {
+        callbacks: { label: ctx => ctx.parsed.y.toFixed(1) + '%' }
+      }},
+      scales: {
+        x: { display: false },
+        y: {
+          min: 0, max: 100,
+          grid: { color: '#1a1e26' },
+          ticks: { callback: v => v + '%', maxTicksLimit: 4 }
+        }
+      }
+    }
+  });
+}
+
+const cpuChart  = makeChart('cpu-chart',  '#00d4aa');
+const ramChart  = makeChart('ram-chart',  '#3b82f6');
+const diskChart = makeChart('disk-chart', '#f59e0b');
+
+function formatUptime(s) {
+  const d = Math.floor(s/86400), h = Math.floor((s%86400)/3600), m = Math.floor((s%3600)/60);
+  if (d>0) return d+'d '+h+'h '+m+'m';
+  if (h>0) return h+'h '+m+'m';
+  return m+'m';
+}
+
+function updateChart(chart, labels, data) {
+  chart.data.labels = labels;
+  chart.data.datasets[0].data = data;
+  chart.update('none');
+}
+
+async function load() {
+  try {
+    const r = await fetch(`/api/devices/${DEVICE_ID}`).then(r => r.json());
+
+    // Header
+    document.getElementById('device-hostname').textContent = '// ' + r.device.hostname;
+    document.getElementById('device-subtitle').textContent =
+      r.device.ip_address + ' · ' + r.device.os_name;
+    document.getElementById('device-badge').innerHTML =
+      `<span class="badge badge-${r.device.status === 'online' ? 'online' : 'offline'}">${r.device.status}</span>`;
+
+    // Info
+    document.getElementById('info-hostname').textContent = r.device.hostname;
+    document.getElementById('info-ip').textContent = r.device.ip_address;
+    document.getElementById('info-os').textContent = r.device.os_name;
+    document.getElementById('info-first').textContent =
+      r.device.first_seen ? new Date(r.device.first_seen+'Z').toLocaleString() : '—';
+    document.getElementById('info-last').textContent =
+      r.device.last_seen ? new Date(r.device.last_seen+'Z').toLocaleString() : '—';
+
+    // Live metrics
+    if (r.metrics.length) {
+      const latest = r.metrics[r.metrics.length - 1];
+      document.getElementById('live-cpu').textContent  = latest.cpu.toFixed(1) + '%';
+      document.getElementById('live-ram').textContent  = latest.ram.toFixed(1) + '%';
+      document.getElementById('live-disk').textContent = latest.disk.toFixed(1) + '%';
+      document.getElementById('live-uptime').textContent = formatUptime(latest.uptime);
+    }
+
+    // Charts
+    const labels = r.metrics.map(m => new Date(m.ts+'Z').toLocaleTimeString());
+    updateChart(cpuChart,  labels, r.metrics.map(m => m.cpu));
+    updateChart(ramChart,  labels, r.metrics.map(m => m.ram));
+    updateChart(diskChart, labels, r.metrics.map(m => m.disk));
+
+    // Alerts
+    const tbody = document.getElementById('alerts-body');
+    if (r.alerts.length) {
+      tbody.innerHTML = r.alerts.map(a => `
+        <tr>
+          <td class="ts">${new Date(a.ts+'Z').toLocaleString()}</td>
+          <td>${a.type}</td>
+          <td class="severity-${a.severity}">${a.severity}</td>
+          <td class="msg">${a.message}</td>
+          <td>${a.phone ? '✓' : '—'}</td>
+        </tr>`).join('');
+    } else {
+      tbody.innerHTML = '<tr><td colspan="5" class="empty-state" style="padding:24px;text-align:center;color:var(--text3)">No alerts</td></tr>';
+    }
+
+    // AI summary
+    if (r.ai_summary) {
+      document.getElementById('ai-panel').style.display = 'block';
+      document.getElementById('ai-summary').textContent = r.ai_summary.summary;
+      document.getElementById('ai-cause').textContent = r.ai_summary.cause;
+      document.getElementById('ai-rec').innerHTML =
+        '<strong>Recommendation:</strong> ' + r.ai_summary.recommendation;
+      const ts = r.ai_summary.ts ? new Date(r.ai_summary.ts+'Z').toLocaleTimeString() : '';
+      document.getElementById('ai-ts').textContent = ts;
+    }
+
+  } catch(e) {
+    document.getElementById('device-hostname').textContent = '// error loading device';
+  }
+}
+
+load();
+setInterval(load, 10000);
+</script>
+{% endblock %}

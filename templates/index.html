@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block title %}Overview{% endblock %}
+{% block nav_home %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>// overview</h1>
+  <p>Real-time system health across all monitored devices</p>
+</div>
+
+<div class="stats-row">
+  <div class="stat-card">
+    <div class="label">Total devices</div>
+    <div class="value" id="stat-total">—</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Online</div>
+    <div class="value green" id="stat-online">—</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Warning</div>
+    <div class="value warn" id="stat-warn">—</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Critical</div>
+    <div class="value crit" id="stat-crit">—</div>
+  </div>
+</div>
+
+<div class="section-title">Monitored devices</div>
+<div class="devices-grid" id="devices-grid">
+  <div class="empty-state">Loading devices...</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function formatUptime(seconds) {
+  if (!seconds) return '—';
+  const d = Math.floor(seconds / 86400);
+  const h = Math.floor((seconds % 86400) / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  if (d > 0) return `${d}d ${h}h`;
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m}m`;
+}
+
+function metricClass(v, warn, crit) {
+  if (v >= crit) return 'crit';
+  if (v >= warn) return 'warn';
+  return 'ok';
+}
+
+function cardBorderClass(device) {
+  if (device.status === 'offline') return 'offline-border';
+  const cpu = device.cpu || 0, ram = device.ram || 0, disk = device.disk || 0;
+  if (cpu >= 90 || ram >= 95 || disk >= 95) return 'crit-border';
+  if (cpu >= 80 || ram >= 85 || disk >= 85 || device.active_alerts > 0) return 'warn-border';
+  return '';
+}
+
+function badgeHtml(device) {
+  if (device.status === 'offline') return '<span class="badge badge-offline">offline</span>';
+  const cpu = device.cpu || 0, ram = device.ram || 0, disk = device.disk || 0;
+  if (cpu >= 90 || ram >= 95 || disk >= 95) return '<span class="badge badge-critical">critical</span>';
+  if (cpu >= 80 || ram >= 85 || disk >= 85 || device.active_alerts > 0) return '<span class="badge badge-warning">warning</span>';
+  return '<span class="badge badge-online">healthy</span>';
+}
+
+function renderDevices(devices) {
+  const grid = document.getElementById('devices-grid');
+  let online=0, warn=0, crit=0;
+
+  if (!devices.length) {
+    grid.innerHTML = '<div class="empty-state">No devices yet. Start the agent to see data here.</div>';
+    return;
+  }
+
+  grid.innerHTML = devices.map(d => {
+    if (d.status === 'online') {
+      online++;
+      const cpu = d.cpu||0, ram = d.ram||0, disk = d.disk||0;
+      if (cpu>=90||ram>=95||disk>=95) crit++;
+      else if (cpu>=80||ram>=85||disk>=85||d.active_alerts>0) warn++;
+    }
+
+    const cc = metricClass(d.cpu||0, 80, 90);
+    const rc = metricClass(d.ram||0, 85, 95);
+    const dc = metricClass(d.disk||0, 85, 95);
+    const lastSeen = d.last_seen ? new Date(d.last_seen+'Z').toLocaleTimeString() : '—';
+
+    return `<a href="/device/${d.device_id}" class="device-card ${cardBorderClass(d)}">
+      <div class="device-header">
+        <div>
+          <div class="device-name">${d.hostname || d.device_id}</div>
+          <div class="device-meta">${d.ip_address || '—'} · ${d.os_name || '—'}</div>
+        </div>
+        ${badgeHtml(d)}
+      </div>
+      <div class="metrics-row">
+        <div class="metric-item">
+          <div class="metric-label">CPU</div>
+          <div class="metric-value ${cc}">${d.cpu != null ? d.cpu.toFixed(1)+'%' : '—'}</div>
+          <div class="progress-bar"><div class="progress-fill ${cc}" style="width:${d.cpu||0}%"></div></div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-label">RAM</div>
+          <div class="metric-value ${rc}">${d.ram != null ? d.ram.toFixed(1)+'%' : '—'}</div>
+          <div class="progress-bar"><div class="progress-fill ${rc}" style="width:${d.ram||0}%"></div></div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-label">Disk</div>
+          <div class="metric-value ${dc}">${d.disk != null ? d.disk.toFixed(1)+'%' : '—'}</div>
+          <div class="progress-bar"><div class="progress-fill ${dc}" style="width:${d.disk||0}%"></div></div>
+        </div>
+      </div>
+      <div class="device-footer">
+        <span>uptime: <span class="uptime-pill">${formatUptime(d.uptime)}</span></span>
+        <span>updated ${lastSeen}</span>
+      </div>
+    </a>`;
+  }).join('');
+
+  document.getElementById('stat-total').textContent = devices.length;
+  document.getElementById('stat-online').textContent = online;
+  document.getElementById('stat-warn').textContent = warn;
+  document.getElementById('stat-crit').textContent = crit;
+}
+
+async function refresh() {
+  try {
+    const devices = await fetch('/api/devices').then(r => r.json());
+    renderDevices(devices);
+  } catch(e) {
+    document.getElementById('devices-grid').innerHTML =
+      '<div class="empty-state">Cannot reach server. Is Flask running?</div>';
+  }
+}
+
+refresh();
+setInterval(refresh, 10000);
+</script>
+{% endblock %}

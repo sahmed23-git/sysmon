@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Alerts{% endblock %}
+{% block nav_alerts %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>// alerts</h1>
+  <p>All triggered alerts across all devices</p>
+</div>
+
+<div class="alert-table-wrap">
+  <table class="alert-table">
+    <thead>
+      <tr>
+        <th>Time</th><th>Device</th><th>Type</th><th>Severity</th><th>Message</th><th>Phone</th>
+      </tr>
+    </thead>
+    <tbody id="alerts-body">
+      <tr><td colspan="6" style="padding:32px;text-align:center;color:var(--text3)">Loading...</td></tr>
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function loadAlerts() {
+  const [alerts, devices] = await Promise.all([
+    fetch('/api/alerts').then(r => r.json()),
+    fetch('/api/devices').then(r => r.json())
+  ]);
+  const deviceMap = {};
+  devices.forEach(d => deviceMap[d.device_id] = d.hostname);
+  const tbody = document.getElementById('alerts-body');
+  if (!alerts.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="padding:32px;text-align:center;color:var(--text3)">No alerts yet.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = alerts.map(a => `
+    <tr>
+      <td class="ts">${new Date(a.ts+'Z').toLocaleString()}</td>
+      <td><a href="/device/${a.device_id}" style="color:var(--accent);text-decoration:none">${deviceMap[a.device_id]||a.device_id}</a></td>
+      <td>${a.type}</td>
+      <td class="severity-${a.severity}">${a.severity}</td>
+      <td class="msg">${a.message}</td>
+      <td style="font-family:var(--font-mono);font-size:11px">${a.phone ? '✓ sent' : '—'}</td>
+    </tr>`).join('');
+}
+loadAlerts();
+setInterval(loadAlerts, 15000);
+</script>
+{% endblock %}

@@ -1,0 +1,1 @@
+{"cpu_warn": 80, "cpu_crit": 90, "ram_warn": 85, "ram_crit": 95, "disk_warn": 85, "disk_crit": 95, "offline_seconds": 60, "cooldown_minutes": 10, "telegram_token": "", "telegram_chat_id": ""}

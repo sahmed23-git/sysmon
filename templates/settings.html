@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Settings{% endblock %}
+{% block nav_settings %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>// settings</h1>
+  <p>Alert thresholds and notification configuration</p>
+</div>
+
+<div class="settings-section">
+  <h3>Alert thresholds</h3>
+  <div class="form-grid">
+    <div class="form-group">
+      <label>CPU warning (%)</label>
+      <input type="number" id="cpu_warn" min="0" max="100" value="80">
+    </div>
+    <div class="form-group">
+      <label>CPU critical (%)</label>
+      <input type="number" id="cpu_crit" min="0" max="100" value="90">
+    </div>
+    <div class="form-group">
+      <label>RAM warning (%)</label>
+      <input type="number" id="ram_warn" min="0" max="100" value="85">
+    </div>
+    <div class="form-group">
+      <label>RAM critical (%)</label>
+      <input type="number" id="ram_crit" min="0" max="100" value="95">
+    </div>
+    <div class="form-group">
+      <label>Disk warning (%)</label>
+      <input type="number" id="disk_warn" min="0" max="100" value="85">
+    </div>
+    <div class="form-group">
+      <label>Disk critical (%)</label>
+      <input type="number" id="disk_crit" min="0" max="100" value="95">
+    </div>
+    <div class="form-group">
+      <label>Offline after (seconds)</label>
+      <input type="number" id="offline_seconds" min="10" value="60">
+    </div>
+    <div class="form-group">
+      <label>Alert cooldown (minutes)</label>
+      <input type="number" id="cooldown_minutes" min="1" value="10">
+    </div>
+  </div>
+</div>
+
+<div class="settings-section">
+  <h3>Telegram notifications</h3>
+  <p style="color:var(--text2);font-size:12px;margin-bottom:16px">
+    Create a bot via @BotFather, then get your chat ID by messaging @userinfobot.
+  </p>
+  <div class="form-grid">
+    <div class="form-group">
+      <label>Bot token</label>
+      <input type="text" id="telegram_token" placeholder="1234567890:ABCdef...">
+    </div>
+    <div class="form-group">
+      <label>Chat ID</label>
+      <input type="text" id="telegram_chat_id" placeholder="-100123456789">
+    </div>
+  </div>
+</div>
+
+<button class="btn-save" onclick="saveSettings()">Save settings</button>
+
+<div class="toast" id="toast">Settings saved</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function loadSettings() {
+  const s = await fetch('/api/settings').then(r => r.json());
+  ['cpu_warn','cpu_crit','ram_warn','ram_crit','disk_warn','disk_crit',
+   'offline_seconds','cooldown_minutes','telegram_token','telegram_chat_id'].forEach(k => {
+    const el = document.getElementById(k);
+    if (el && s[k] !== undefined) el.value = s[k];
+  });
+}
+
+async function saveSettings() {
+  const keys = ['cpu_warn','cpu_crit','ram_warn','ram_crit','disk_warn','disk_crit',
+                 'offline_seconds','cooldown_minutes','telegram_token','telegram_chat_id'];
+  const data = {};
+  keys.forEach(k => {
+    const el = document.getElementById(k);
+    if (!el) return;
+    data[k] = el.type === 'number' ? Number(el.value) : el.value;
+  });
+  await fetch('/api/settings', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data) });
+  const t = document.getElementById('toast');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+loadSettings();
+</script>
+{% endblock %}
