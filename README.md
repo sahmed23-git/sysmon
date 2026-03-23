@@ -183,13 +183,7 @@ Each device gets a unique persistent ID and appears automatically on the dashboa
 ## Screenshots
 
 > Dashboard overview, device detail with charts, and Telegram alerts running on Windows 10.
-> ![Sysmon Dashboard](https://github.com/user-attachments/assets/d027e792-dabe-4e80-8869-1e1bd7d80e46)
-> <img width="1197" height="834" alt="Sysmon Alert History" src="https://github.com/user-attachments/assets/5eb8d06b-9806-43ea-88e3-3109a562a6ba" />
-<img width="1197" height="832" alt="Sysmon Settings" src="https://github.com/user-attachments/assets/58196b39-b083-43f1-a4ea-f2d759d0dafc" />
-<img width="518" height="1024" alt="Sysmon PhoneAlert" src="https://github.com/user-attachments/assets/1a124307-f5ec-45d7-bbdf-19fd142a8670" />
-<img width="1920" height="870" alt="Sysmon Web DashBoard" src="https://github.com/user-attachments/assets/6cd3fa28-cb81-48cb-955d-9226e9dec6fa" />
-
-
+![Sysmon Dashboard](https://github.com/user-attachments/assets/943dd7df-5527-4e79-9cbd-2a70b71edbd2)
 
 
 
